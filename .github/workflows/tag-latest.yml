@@ -12,25 +12,28 @@ jobs:
       contents: write
 
     steps:
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d-%H-%M-%S')"
       - name: Checkout branch "master"
         uses: actions/checkout@v4
         with:
           ref: 'master'
           token: ${{ secrets.PAT }}
       - name: tag
+        id: tag
         run: |
-          git tag latest-${{ steps.date.outputs.date }}
+          sha_short=$(git rev-parse --short HEAD)
+          date=$(date +'%Y-%m-%d')
+          tag=latest-${date}-${sha_short}
+          echo "tag=${tag}" >> $GITHUB_OUTPUT
+          git tag ${tag}
           git push --tags
 
     outputs:
-      tag_name: latest-${{ steps.date.outputs.date }}
+      tag_name: ${{ steps.tag.outputs.tag }}
 
   clean:
     name: Clean obsolete latest
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@v3
       - name: Delete old latest releases
